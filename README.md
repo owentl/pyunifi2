@@ -151,11 +151,11 @@ then  be used to restore a controller on another machine.
 
 Remember that this puts significant load on a controller for some time (depending on the amount of users and managed APs).
 
-### `get_backup(self, targetfile)`
+### `get_backup(self, download_path=None, targetfile="unifi-backup.unf")`
 
 Tells the controller to create a backup archive and downloads it to a file. It should have a .unf extension for later restore.
-
- - `targetfile` -- the target file name, you can also use a full path. Default creates unifi-backup.unf in the current directoy.
+ - `download_path` -- the url of the `.unf` file to be downloaded. If this is `None` then `create_backup()` is called first.
+ - `targetfile` -- the target file name. You can also use a full path. Default creates unifi-backup.unf in the current directoy.
 
 ### `authorize_guest(self, guest_mac, minutes, up_bandwidth=None, down_bandwidth=None, byte_quota=None, ap_mac=None)`
 
