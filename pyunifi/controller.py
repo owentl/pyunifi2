@@ -569,7 +569,7 @@ class Controller:  # pylint: disable=R0902,R0904
 
         response = self.session.get(self.url + download_path, stream=True)
 
-        if response != 200:
+        if response.status_code != 200:
             raise APIError("API backup failed: %i" % response.status_code)
 
         with open(target_file, "wb") as _backfh:
