@@ -546,7 +546,7 @@ class Controller:  # pylint: disable=R0902,R0904
 
         res = self._run_command(
             "backup",
-            mgr="system",
+            mgr="backup",
             params={"days": days}
             )
         return res[0]["url"]
