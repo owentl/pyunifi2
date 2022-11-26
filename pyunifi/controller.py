@@ -861,3 +861,10 @@ class Controller:  # pylint: disable=R0902,R0904
         cmd = "delete-voucher"
         params = {"_id": voucher_id}
         self._run_command(cmd, mgr="hotspot", params=params)
+
+    def get_rogues(self, hours: int = 48):
+            """Return a list of rogue APs
+            """
+            params = {"within": hours}
+            return self._api_read("stat/rogueap", params)
+
