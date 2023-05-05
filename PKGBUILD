@@ -1,5 +1,5 @@
 pkgname=python-pyunifi
-pkgver=r252.a60c150
+pkgver=r254.15e0645
 pkgrel=1
 pkgdesc='A rewrite of https://github.com/unifi-hackers/unifi-lab in cleaner Python.'
 arch=('any')
