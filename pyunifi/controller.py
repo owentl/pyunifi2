@@ -9,6 +9,7 @@ import logging
 
 import requests
 from urllib3.exceptions import InsecureRequestWarning
+from typing import List, Dict
 
 
 """For testing purposes:
@@ -867,4 +868,17 @@ class Controller:  # pylint: disable=R0902,R0904
             """
             params = {"within": hours}
             return self._api_read("stat/rogueap", params)
+
+    def get_radius_profiles(self):
+        """
+        Return a list of radius profiles
+        """
+        return self._api_read("rest/radiusprofile")
+
+    def set_radius_auth_servers(self, _id: str, auth_servers: List[Dict]):
+        """
+        Return a list of radius profiles
+        """
+        params = {"auth_servers": auth_servers}
+        return self._api_update("rest/radiusprofile/" + _id, params)
 
