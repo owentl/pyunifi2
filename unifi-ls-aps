@@ -31,6 +31,9 @@ parser.add_argument(
     help='the site ID, UniFi >=3.x only (default "default")',
 )
 parser.add_argument(
+    "-d", "--debug", default=False, help="enable debug output", action="store_true"
+)
+parser.add_argument(
     "-V",
     "--no-ssl-verify",
     default=False,
@@ -41,7 +44,10 @@ parser.add_argument(
     "-C", "--certificate", default="", help="verify with ssl certificate pem file"
 )
 parser.add_argument(
-    "-d", "--debug", default=False, help="enable debug output", action="store_true"
+    "-f",
+    "--file",
+    default="statistics-unifi.csv",
+    help="the filename of write statistics",
 )
 args = parser.parse_args()
 
@@ -65,27 +71,5 @@ c = Controller(
     ssl_verify=ssl_verify,
 )
 
-voucher = c.create_voucher(
-    1,
-    1,
-    60,
-    up_bandwidth=1024,
-    down_bandwidth=1024,
-    byte_quota=1000,
-    note="unifi-create-voucher",
-)
-
-code = voucher[0].get("code")
-
-
-def format_code(string):
-    length_string = len(string)
-    first_length = round(length_string / 2)
-    first_half = string[0:first_length].lower()
-    second_half = string[first_length:].upper()
-    return first_half + "-" + second_half
-
-
-voucher_code = format_code(code)
-
-print(voucher_code)
+for ap in c.get_aps():
+    print("AP named %s with MAC %s" % (ap.get("name"), ap["mac"]))

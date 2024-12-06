@@ -1,32 +1,75 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import argparse
 
 from pyunifi.controller import Controller
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--controller', default='unifi', help='the controller address (default "unifi")')
-parser.add_argument('-u', '--username', default='admin', help='the controller username (default("admin")')
-parser.add_argument('-p', '--password', default='', help='the controller password')
-parser.add_argument('-b', '--port', default='8443', help='the controller port (default "8443")')
-parser.add_argument('-v', '--version', default='v5', help='the controller base version (default "v5")')
-parser.add_argument('-s', '--siteid', default='default', help='the site ID, UniFi >=3.x only (default "default")')
-parser.add_argument('-V', '--no-ssl-verify', default=False, action='store_true', help='Don\'t verify ssl certificates')
-parser.add_argument('-C', '--certificate', default='', help='verify with ssl certificate pem file')
+parser.add_argument(
+    "-c",
+    "--controller",
+    default="unifi",
+    help='the controller address (default "unifi")',
+)
+parser.add_argument(
+    "-u",
+    "--username",
+    default="admin",
+    help='the controller username (default("admin")',
+)
+parser.add_argument("-p", "--password", default="", help="the controller password")
+parser.add_argument(
+    "-b", "--port", default="8443", help='the controller port (default "8443")'
+)
+parser.add_argument(
+    "-v", "--version", default="v5", help='the controller base version (default "v5")'
+)
+parser.add_argument(
+    "-s",
+    "--siteid",
+    default="default",
+    help='the site ID, UniFi >=3.x only (default "default")',
+)
+parser.add_argument(
+    "-V",
+    "--no-ssl-verify",
+    default=False,
+    action="store_true",
+    help="Don't verify ssl certificates",
+)
+parser.add_argument(
+    "-C", "--certificate", default="", help="verify with ssl certificate pem file"
+)
+parser.add_argument(
+    "-d", "--debug", default=False, help="enable debug output", action="store_true"
+)
 args = parser.parse_args()
 
-ssl_verify = (not args.no_ssl_verify)
+ssl_verify = not args.no_ssl_verify
 
 if ssl_verify and len(args.certificate) > 0:
-        ssl_verify = args.certificate
+    ssl_verify = args.certificate
 
-c = Controller(args.controller, args.username, args.password, args.port, args.version, args.siteid, ssl_verify=ssl_verify)
+if args.debug:
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+c = Controller(
+    args.controller,
+    args.username,
+    args.password,
+    args.port,
+    args.version,
+    args.siteid,
+    ssl_verify=ssl_verify,
+)
 
 users = c.get_radius_users()
-users.sort(key=lambda x: x['name'])
+users.sort(key=lambda x: x["name"])
 
-FORMAT = '%-26s %-16s %-26s %-26s'
-print(FORMAT % ('USERNAME', 'PASSWORD', 'ID', 'SITE ID'))
+FORMAT = "%-26s %-16s %-26s %-26s"
+print(FORMAT % ("USERNAME", "PASSWORD", "ID", "SITE ID"))
 for user in users:
     name = user["name"]
     password = user["x_password"]

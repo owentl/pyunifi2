@@ -1,55 +1,105 @@
-#!/usr/bin/env python
-  
+#!/usr/bin/env python3
+
 import argparse
 import json
 
 from pyunifi.controller import Controller
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--controller', default='unifi', help='the controller address (default "unifi")')
-parser.add_argument('-u', '--username', default='admin', help='the controller username (default("admin")')
-parser.add_argument('-p', '--password', default='', help='the controller password')
-parser.add_argument('-b', '--port', default='8443', help='the controller port (default "8443")')
-parser.add_argument('-v', '--version', default='v5', help='the controller base version (default "v5")')
-parser.add_argument('-s', '--siteid', default='default', help='the source site ID, (default "default")')
-parser.add_argument('-S', '--siteid2', default='', help='the destination site ID, to copy to')
-parser.add_argument('-V', '--no-ssl-verify', default=False, action='store_true', help='Don\'t verify ssl certificates')
-parser.add_argument('-C', '--certificate', default='', help='verify with ssl certificate pem file')
+parser.add_argument(
+    "-c",
+    "--controller",
+    default="unifi",
+    help='the controller address (default "unifi")',
+)
+parser.add_argument(
+    "-u",
+    "--username",
+    default="admin",
+    help='the controller username (default("admin")',
+)
+parser.add_argument("-p", "--password", default="", help="the controller password")
+parser.add_argument(
+    "-b", "--port", default="8443", help='the controller port (default "8443")'
+)
+parser.add_argument(
+    "-v", "--version", default="v5", help='the controller base version (default "v5")'
+)
+parser.add_argument(
+    "-s", "--siteid", default="default", help='the source site ID, (default "default")'
+)
+parser.add_argument(
+    "-S", "--siteid2", default="", help="the destination site ID, to copy to"
+)
+parser.add_argument(
+    "-V",
+    "--no-ssl-verify",
+    default=False,
+    action="store_true",
+    help="Don't verify ssl certificates",
+)
+parser.add_argument(
+    "-C", "--certificate", default="", help="verify with ssl certificate pem file"
+)
+parser.add_argument(
+    "-d", "--debug", default=False, help="enable debug output", action="store_true"
+)
 args = parser.parse_args()
 
-ssl_verify = (not args.no_ssl_verify)
+ssl_verify = not args.no_ssl_verify
 
 if ssl_verify and len(args.certificate) > 0:
-        ssl_verify = args.certificate
-        
-controller_source = Controller(args.controller, args.username, args.password, args.port, args.version, args.siteid,  ssl_verify=ssl_verify)
-controller_dest   = Controller(args.controller, args.username, args.password, args.port, args.version, args.siteid2, ssl_verify=ssl_verify)
+    ssl_verify = args.certificate
+
+if args.debug:
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+controller_source = Controller(
+    args.controller,
+    args.username,
+    args.password,
+    args.port,
+    args.version,
+    args.siteid,
+    ssl_verify=ssl_verify,
+)
+controller_dest = Controller(
+    args.controller,
+    args.username,
+    args.password,
+    args.port,
+    args.version,
+    args.siteid2,
+    ssl_verify=ssl_verify,
+)
 
 source_users = controller_source.get_radius_users()
 dest_users = controller_dest.get_radius_users()
 
 for user in source_users:
-        # remove irrelevent fields
-        user.pop("site_id", None)
-        user.pop("vlan", None)
-        user.pop("tunnel_type", None)
-        user.pop("tunnel_medium_type", None)
-        # add status field to keep track of which
-        # users should be added or deleted or modified
-        user["status"] = "None"
+    # remove irrelevent fields
+    user.pop("site_id", None)
+    user.pop("vlan", None)
+    user.pop("tunnel_type", None)
+    user.pop("tunnel_medium_type", None)
+    # add status field to keep track of which
+    # users should be added or deleted or modified
+    user["status"] = "None"
 for user in dest_users:
-        # remove irrelevent fields
-        user.pop("site_id", None)
-        user.pop("vlan", None)
-        user.pop("tunnel_type", None)
-        user.pop("tunnel_medium_type", None)
-        # add status field to keep track of which
-        # users should be added or deleted or modified
-        user["status"] = "None"
+    # remove irrelevent fields
+    user.pop("site_id", None)
+    user.pop("vlan", None)
+    user.pop("tunnel_type", None)
+    user.pop("tunnel_medium_type", None)
+    # add status field to keep track of which
+    # users should be added or deleted or modified
+    user["status"] = "None"
 
-source_users.sort(key=lambda x: x['name'])
+source_users.sort(key=lambda x: x["name"])
 print("source_users\n", json.dumps(source_users, indent=2, sort_keys=False), "\n")
-dest_users.sort(key=lambda x: x['name'])
+dest_users.sort(key=lambda x: x["name"])
 print("dest_users\n", json.dumps(dest_users, indent=2, sort_keys=False), "\n")
 
 unchanged_users = []
@@ -60,29 +110,29 @@ temp_user = {}
 # to decide which users have been unchanged or modified
 #
 for source_user in source_users:
-        for dest_user in dest_users:
-                if source_user['name'] == dest_user['name']:
-                        # usernames are the same
-                        if source_user['x_password'] == dest_user['x_password']:
-                                #  username and password are the same
-                                dest_user["status"] = "unchanged"
-                                source_user["status"] = "unchanged"
-                                unchanged_users.append (source_user)
-                        else:
-                                # username is the same but password has changed
-                                dest_user["status"] = "modified"
-                                source_user["status"] = "modified"
-                                # Strange problem solved by temp_user.
-                                # We need the username/password of source_user
-                                temp_user['name'] = source_user['name']
-                                temp_user['x_password'] = source_user['x_password']
-                                # but: we need the id of the destination user to modify it
-                                temp_user['_id'] = dest_user['_id']
-                                modified_users.append (temp_user)
+    for dest_user in dest_users:
+        if source_user["name"] == dest_user["name"]:
+            # usernames are the same
+            if source_user["x_password"] == dest_user["x_password"]:
+                #  username and password are the same
+                dest_user["status"] = "unchanged"
+                source_user["status"] = "unchanged"
+                unchanged_users.append(source_user)
+            else:
+                # username is the same but password has changed
+                dest_user["status"] = "modified"
+                source_user["status"] = "modified"
+                # Strange problem solved by temp_user.
+                # We need the username/password of source_user
+                temp_user["name"] = source_user["name"]
+                temp_user["x_password"] = source_user["x_password"]
+                # but: we need the id of the destination user to modify it
+                temp_user["_id"] = dest_user["_id"]
+                modified_users.append(temp_user)
 
-unchanged_users.sort(key=lambda x: x['name'])
+unchanged_users.sort(key=lambda x: x["name"])
 print("unchanged_users\n", json.dumps(unchanged_users, indent=2, sort_keys=False), "\n")
-modified_users.sort(key=lambda x: x['name'])
+modified_users.sort(key=lambda x: x["name"])
 print("modified_users\n", json.dumps(modified_users, indent=2, sort_keys=False), "\n")
 
 added_users = []
@@ -93,33 +143,35 @@ deleted_users = []
 #
 # Unique users on the source will be added to the destination
 for source_user in source_users:
-        if source_user['status'] == 'None':
-                source_user['status'] == 'added'
-                added_users.append(source_user)
+    if source_user["status"] == "None":
+        source_user["status"] == "added"
+        added_users.append(source_user)
 #
 # Unique users on the destination will be deleted from the destination
 for dest_user in dest_users:
-        if dest_user['status'] == 'None':
-                dest_user['status'] == 'deleted'
-                deleted_users.append(dest_user)
+    if dest_user["status"] == "None":
+        dest_user["status"] == "deleted"
+        deleted_users.append(dest_user)
 
-added_users.sort(key=lambda x: x['name'])
+added_users.sort(key=lambda x: x["name"])
 print("added_users\n", json.dumps(added_users, indent=2, sort_keys=False), "\n")
-deleted_users.sort(key=lambda x: x['name'])
+deleted_users.sort(key=lambda x: x["name"])
 print("deleted_users\n", json.dumps(deleted_users, indent=2, sort_keys=False), "\n")
 
-print ()
+print()
 if (len(added_users) == 0) and (len(modified_users) == 0) and (len(deleted_users) == 0):
-        print ("No users to add, modify, or delete")
+    print("No users to add, modify, or delete")
 else:
-        for user in added_users:
-                print ("adding user:", user['name'])
-                controller_dest.add_radius_user(user['name'], user['x_password'])
+    for user in added_users:
+        print("adding user:", user["name"])
+        controller_dest.add_radius_user(user["name"], user["x_password"])
 
-        for user in modified_users:
-                print ("updating user:", user['name'])
-                controller_dest.update_radius_user(user['name'], user['x_password'], user['_id'])
+    for user in modified_users:
+        print("updating user:", user["name"])
+        controller_dest.update_radius_user(
+            user["name"], user["x_password"], user["_id"]
+        )
 
-        for user in deleted_users:
-                print ("deleting user:", user['name'])
-                controller_dest.delete_radius_user(user['_id'])
+    for user in deleted_users:
+        print("deleting user:", user["name"])
+        controller_dest.delete_radius_user(user["_id"])

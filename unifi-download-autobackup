@@ -1,8 +1,30 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
+import sys
 
+from icecream import ic
 from pyunifi.controller import Controller
+
+
+def credFromCredsDir(credname):
+    if "CREDENTIALS_DIRECTORY" in os.environ.keys():
+        credfilename = os.path.join(os.environ["CREDENTIALS_DIRECTORY"], credname)
+        try:
+            with open(credfilename, "r") as credfile:
+                cred = credfile.read().rstrip()
+        except Exception as e:
+            sys.stderr.write(
+                "Could not read cred {} from {}".format(credname, credfilename)
+            )
+            ic(e)
+            sys.exit(2)
+    else:
+        sys.stderr.write("CREDENTIALS_DIRECTORY environment not provided")
+        sys.exit(1)
+    return cred
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -31,6 +53,9 @@ parser.add_argument(
     help='the site ID, UniFi >=3.x only (default "default")',
 )
 parser.add_argument(
+    "-d", "--debug", default=False, help="enable debug output", action="store_true"
+)
+parser.add_argument(
     "-V",
     "--no-ssl-verify",
     default=False,
@@ -39,9 +64,6 @@ parser.add_argument(
 )
 parser.add_argument(
     "-C", "--certificate", default="", help="verify with ssl certificate pem file"
-)
-parser.add_argument(
-    "-d", "--debug", default=False, help="enable debug output", action="store_true"
 )
 args = parser.parse_args()
 
@@ -55,37 +77,19 @@ if args.debug:
 
     logging.basicConfig(level=logging.DEBUG)
 
+apipassword = args.password
+if not apipassword:
+    apipassword = credFromCredsDir("api-password")
+
 c = Controller(
     args.controller,
     args.username,
-    args.password,
+    apipassword,
     args.port,
     args.version,
     args.siteid,
     ssl_verify=ssl_verify,
 )
 
-voucher = c.create_voucher(
-    1,
-    1,
-    60,
-    up_bandwidth=1024,
-    down_bandwidth=1024,
-    byte_quota=1000,
-    note="unifi-create-voucher",
-)
-
-code = voucher[0].get("code")
-
-
-def format_code(string):
-    length_string = len(string)
-    first_length = round(length_string / 2)
-    first_half = string[0:first_length].lower()
-    second_half = string[first_length:].upper()
-    return first_half + "-" + second_half
-
-
-voucher_code = format_code(code)
-
-print(voucher_code)
+targetfile = c.get_last_autobackup()
+print("Got backup {}".format(targetfile))
